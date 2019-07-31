@@ -1,6 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from VentSimulator.Ventilator import Ventilator
-
 
 class VolumeVentilator(Ventilator):
     from enum import Enum
@@ -86,3 +86,104 @@ class VolumeVentilator(Ventilator):
                     last_breath_start = current_time
                     flow = self.setupInspiratoryFlow(time_step)
             current_time = current_time + time_step
+    
+    def interactive_shim(self, volume_target, peep, flow, respiratory_rate, flow_pattern, 
+        rise_time, inspiratory_pause, resistance, compliance):
+        self['volume_target'] = volume_target
+        self['peep'] = peep
+        self['flow'] = flow
+        self['respiratory_rate'] = respiratory_rate
+        self['flow_pattern'] = flow_pattern
+        self['rise_time'] = rise_time
+        self['inspiratory_pause'] = inspiratory_pause
+        self.patient.resistance = resistance
+        self.patient.compliance = compliance
+
+        self.simulate(12)
+
+        f, (ax1,ax2,ax3) = plt.subplots(3,1,figsize=(12, 12))
+        ax1.set_ylim(0,50)
+        self.plot(['pressure', 'p_alv'], ax1)
+        self.plot('flow', ax2, scalefactor = 60)
+        ax2.set_ylim(-120, 120)
+        self.plot('volume', ax3, scalefactor = 1000)
+
+    def interact(self):
+        import ipywidgets as widgets
+        import IPython.display
+
+        volume_target_widget = widgets.FloatSlider(
+            value = self['volume_target'],
+            min = 0.1,
+            max = 2.0,
+            step = 0.05,
+            continuous_update = False,
+            description = "Vt")
+
+        peep_widget = widgets.IntSlider(
+            value = self['peep'],
+            min = 0,
+            max = 20,
+            step = 1,
+            continuous_update = False,
+            description = "PEEP"
+        )
+
+        flow_widget = widgets.FloatSlider(
+            value = self['flow'],
+            min = 0,
+            max = 2,
+            step = 0.05,
+            continuous_update = False,
+            description = "Flow"
+        )
+        respiratory_rate_widget = widgets.IntSlider(
+            value = self['respiratory_rate'],
+            min = 0,
+            max = 60,
+            step = 1,
+            continuous_update = False,
+            description = "RR"
+        )
+
+        flow_pattern_widget = widgets.Dropdown(
+            options = [(x.name.title(), x) for x in self.flow_patterns],
+            value = self.flow_patterns.square,
+            description = "Flow Pattern"
+        )
+
+        resistance_widget = widgets.FloatSlider(
+            value = self.patient.resistance,
+            min = 1, 
+            max = 50,
+            step = 1,
+            continuous_update = False,
+            description = "Resistance"
+        )
+
+        compliance_widget = widgets.FloatLogSlider(
+            value = self.patient.compliance,
+            min = -2, 
+            max = -1,
+            base = 10, 
+            step = 0.01,
+            continuous_update = False,
+            description = "Compliance"
+        )
+
+        vent_ui = widgets.VBox([volume_target_widget, peep_widget, flow_widget, respiratory_rate_widget, flow_pattern_widget])
+        patient_ui = widgets.VBox([resistance_widget, compliance_widget])
+        ui = widgets.HBox([vent_ui, patient_ui])
+
+        output = widgets.interactive_output(self.interactive_shim, 
+        {'volume_target': volume_target_widget,
+            'peep': peep_widget,
+            'flow': flow_widget,
+            'respiratory_rate': respiratory_rate_widget,
+            'rise_time': widgets.fixed(0),
+            'inspiratory_pause': widgets.fixed(0),
+            'flow_pattern': flow_pattern_widget,
+            'resistance': resistance_widget,
+            'compliance': compliance_widget})
+
+        return IPython.display.display(ui, output)

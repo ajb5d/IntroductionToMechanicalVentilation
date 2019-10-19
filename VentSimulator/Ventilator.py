@@ -4,10 +4,10 @@ from VentSimulator.Patient import Patient
 
 class Ventilator:
     from enum import IntEnum, Enum
-    parameters = IntEnum('parameters', ['time', 'pressure', 'flow', 'volume', 'p_alv'])
+    parameters = IntEnum('parameters', ['time', 'pressure', 'flow', 'volume', 'p_alv', 'peak_flow'])
     phase = Enum('phase', ['inspiratory', 'expiratory', 'inspiratory_pause'])
     settings = Enum('settings', ['respiratory_rate', 'peep', 'inspiratory_pause', 'flow', 'rise_time', 
-                                 'flow_pattern', 'volume_target', 'pressure_target', 'inspiratory_time'])
+                                 'flow_pattern', 'volume_target', 'pressure_target', 'inspiratory_time', 'flow_trigger'])
     
     CLOSE_ENOUGH = 0.001
     
